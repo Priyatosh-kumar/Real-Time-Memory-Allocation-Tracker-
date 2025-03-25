@@ -3,7 +3,7 @@ from tkinter import ttk
 import psutil
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-from Pname.memory import get_process_info, sort_by_column
+from ProcessList.memory import get_process_info, sort_by_column
 from Graph import update_figure
 
 # Global variables to store sort settings.
