@@ -17,8 +17,10 @@ def get_page_faults():
     return swap.total  # Using total swap memory to represent paging activity
 
 def get_segmentation():
-    """Simulate segmentation by randomly generating values."""
-    return random.randint(1, 10)  # Simulated segmentation fault count
+    """Estimate segmentation faults using swap-ins (more realistic)."""
+    swap_info = psutil.swap_memory()
+    return swap_info.sin / 1024  # Convert bytes to KB
+
 
 def get_top_processes(n=5):
     """Fetches top N processes by memory usage safely."""

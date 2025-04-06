@@ -1,10 +1,12 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk,filedialog, messagebox
 import psutil
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-from ProcessList.memory import get_process_info, sort_by_column
+from Pname.memory import get_process_info, sort_by_column,export_process_data_to_csv
 from Graph import update_figure
+
+
 
 # Global variables to store sort settings.
 current_sort_col = None  # Column key (e.g., "Memory (MB)" or "Process Name")
@@ -64,6 +66,18 @@ def update_treeview():
     update_overall_memory_label()
     root.after(1000, update_treeview)
 
+def export_data_with_dialog():
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".csv",
+        filetypes=[("CSV Files", "*.csv")],
+        title="Save Process Data As"
+    )
+    if file_path:  # If user didn't cancel
+        export_process_data_to_csv(file_path)
+        messagebox.showinfo("Success", f"Process data exported to:\n{file_path}")
+
+
+
 def refresh_graph():
     """
     Update the graph by calling update_figure and redrawing the canvas.
@@ -85,6 +99,10 @@ right_frame.pack(side=tk.RIGHT, fill="both", expand=True)
 # --- Left Panel: Process Table ---
 mem_label = tk.Label(left_frame, text="Overall Memory Usage:", font=("Helvetica", 12))
 mem_label.pack(pady=5)
+# Export Button
+export_button = tk.Button(left_frame, text="Export to CSV", command=export_data_with_dialog)
+export_button.pack(pady=5)
+
 
 table_frame = ttk.Frame(left_frame)
 table_frame.pack(fill="both", expand=True)
