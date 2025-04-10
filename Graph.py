@@ -91,6 +91,7 @@ def update_figure(fig):
             proc['threads']
         ])
 
+
     # Draw table
     table = ax3.table(
         cellText=table_data,
@@ -102,3 +103,5 @@ def update_figure(fig):
     table.scale(1.2, 1.5)
 
     fig.tight_layout()
+
+
