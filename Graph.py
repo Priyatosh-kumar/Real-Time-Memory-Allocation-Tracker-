@@ -12,30 +12,40 @@ def get_memory_usage():
     return psutil.virtual_memory().percent
 
 def get_page_faults():
-    """Simulate page faults using swap memory usage."""
+    """Return swap usage as an indicator of page faults."""
     swap = psutil.swap_memory()
-    return swap.total  # Using total swap memory to represent paging activity
+    return swap.used // (1024**2)  # Return used swap in MB
+
 
 def get_segmentation():
     """Simulate segmentation by randomly generating values."""
     return random.randint(1, 10)  # Simulated segmentation fault count
 
 def get_top_processes(n=5):
-    """Fetches top N processes by memory usage safely."""
+    """Fetches top N unique processes by memory usage, including thread count."""
     processes = []
+    seen_names = set()
+
     for proc in psutil.process_iter(['pid', 'name', 'memory_percent']):
         try:
             info = proc.info
-            if info['memory_percent'] is not None:
-                processes.append(info)
+            name = info.get('name')
+            if name in seen_names or info['memory_percent'] is None:
+                continue
+            info['threads'] = proc.num_threads()
+            seen_names.add(name)
+            processes.append(info)
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
+
+    # Sort and return top N unique-named processes
     return sorted(processes, key=lambda p: p.get('memory_percent', 0), reverse=True)[:n]
+
 
 def update_figure(fig):
     """
     Update the given matplotlib Figure with new data.
-    This function appends new data, clears the figure, and draws the plots.
+    This function appends new data, clears the figure, and draws the plots and a process table.
     """
     global memory_usage, page_faults, segment_table
     # Append new data
@@ -58,21 +68,37 @@ def update_figure(fig):
     ax1.set_ylabel("Memory (%)")
     ax1.legend()
 
-    # Second subplot: Segmentation Faults (for illustration)
+    # Second subplot: Segmentation Faults
     ax2 = fig.add_subplot(3, 1, 2)
     ax2.plot(segment_table, label="Segmentation Faults", color="green")
     ax2.set_ylabel("Segmentation")
     ax2.legend()
 
-    # Display top processes text
+    # Third subplot: Top Processes Table
+    ax3 = fig.add_subplot(3, 1, 3)
+    ax3.axis("off")  # Hide axes
+
+    # Fetch process info
     processes = get_top_processes()
-    text_x, text_y = 0.05, 0.25
-    fig.text(text_x, text_y + 0.05, "**Top Processes (by Memory Usage):**",
-             fontsize=12, fontweight='bold', ha='left', color="black")
-    for process in processes:
-        fig.text(text_x, text_y,
-                 f"{process['name']} (PID: {process['pid']}) - {process['memory_percent']:.2f}% RAM",
-                 fontsize=10, ha='left', va='bottom', color="black")
-        text_y -= 0.05
+
+    # Prepare table data
+    table_data = [["PID", "Name", "Memory %", "Threads"]]
+    for proc in processes:
+        table_data.append([
+            proc['pid'],
+            proc['name'][:20],
+            f"{proc['memory_percent']:.2f}%",
+            proc['threads']
+        ])
+
+    # Draw table
+    table = ax3.table(
+        cellText=table_data,
+        loc='center',
+        cellLoc='left'
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(8)
+    table.scale(1.2, 1.5)
 
     fig.tight_layout()
