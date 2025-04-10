@@ -1,5 +1,5 @@
 import psutil
-
+import csv
 def get_process_info():
     """
     Gather information for each process:
@@ -18,27 +18,30 @@ def get_process_info():
             pid = proc.info['pid']
             name = proc.info['name']
             mem = proc.memory_info().rss / (1024**2)  # Memory in MB
-            cpu = proc.cpu_percent(interval=None)
+            cpu = proc.cpu_percent(interval=None) / psutil.cpu_count(logical=True)
+
             try:
                 io_counters = proc.io_counters()
-                read_kb = io_counters.read_bytes / 1024
-                write_kb = io_counters.write_bytes / 1024
+                read_mb = io_counters.read_bytes / (1024 ** 2)
+                write_mb = io_counters.write_bytes / (1024 ** 2)
+
             except (psutil.AccessDenied, psutil.NoSuchProcess, AttributeError):
-                read_kb = write_kb = 0.0
+                read_mb = write_mb = 0.0
             try:
                 priority = proc.nice()
             except (psutil.AccessDenied, psutil.NoSuchProcess):
                 priority = None
 
             process_list.append({
-                "PID": pid,
-                "Process Name": name,
-                "Memory (MB)": mem,
-                "CPU (%)": cpu,
-                "Disk Read (KB)": read_kb,
-                "Disk Write (KB)": write_kb,
-                "Priority": priority
-            })
+    "PID": pid,
+    "Process Name": name,
+    "Memory (MB)": mem,
+    "CPU (%)": cpu,
+    "Disk Read (MB)": read_mb,
+    "Disk Write (MB)": write_mb,
+    "Priority": priority
+})
+
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
     return process_list
@@ -62,3 +65,33 @@ def sort_by_column(processes, col, reverse=False):
 
     processes.sort(key=key_func, reverse=reverse)
     return processes
+
+
+def export_process_info_to_csv(filename="process_data.csv"):
+    """
+    Exports the process info (as returned by get_process_info()) into a CSV file.
+    """
+    # Retrieve current process information.
+    processes = get_process_info()
+    
+    # Define fieldnames matching the keys in your process dictionaries.
+    fieldnames = [
+        "PID", 
+        "Process Name", 
+        "Memory (MB)", 
+        "CPU (%)", 
+        "Disk Read (MB)", 
+        "Disk Write (MB)", 
+        "Priority"
+    ]
+    
+    # Open the file with write permissions and create a CSV writer.
+    with open(filename, mode="w", newline="") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        
+        # Write the header row.
+        writer.writeheader()
+        
+        # Write each process' data.
+        for proc in processes:
+            writer.writerow(proc)
