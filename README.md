@@ -44,6 +44,18 @@ If you prefer to run the application directly from source, follow these steps:
     git clone https://github.com/Priyatosh-kumar/Real-Time-Memory-Allocation-Tracker-
     cd Real-Time-Memory-Allocation-Tracker-
 
+**Create and Activate a Virtual Environment:**
+```
+# Create the virtual environment
+    python3 -m venv venv
+
+# Activate it (Linux/macOS)
+    source venv/bin/activate
+
+# On Windows
+    venv\Scripts\activate
+
+```
 **Install Dependencies:**
 
 Ensure you have Python 3.6 or later installed, then run:
